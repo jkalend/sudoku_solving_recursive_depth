@@ -1,15 +1,13 @@
 """Run full pipeline: train all models, evaluate, profile, write summary."""
 
 import sys
-import json
 from pathlib import Path
 
 from src.config import Config
 from src.train import train_baseline, train_trm, train_gnn, evaluate
 from src.data import get_dataloaders
 from src.evaluate import run_evaluation, analyze_act_steps, load_model
-from src.profile import run_profiling, profile_latency
-import numpy as np
+from src.profile import run_profiling
 
 
 def main():

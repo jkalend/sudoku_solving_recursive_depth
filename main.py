@@ -26,7 +26,10 @@ def main():
         print("WARNING: CUDA not available. Install PyTorch with CUDA: pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu130")
     epochs = 5 if args.quick else args.epochs
 
-    _, test_loader = get_dataloaders(config.dataset_name, config.batch_size, config.num_workers)
+    if args.evaluate:
+        _, test_loader = get_dataloaders(config.dataset_name, config.batch_size, config.num_workers)
+    else:
+        test_loader = None
 
     if args.model in ("baseline", "all"):
         print("\n=== Training Baseline 4-layer Transformer ===")

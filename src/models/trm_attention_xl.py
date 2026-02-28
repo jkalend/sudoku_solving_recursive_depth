@@ -109,7 +109,7 @@ class TRMAttentionXL(nn.Module):
         if self.use_act and halting_probs_list:
             weights = torch.stack(halting_probs_list, dim=1)
             weights = weights / (weights.sum(dim=1, keepdim=True) + 1e-8)
-            logits = sum(w.unsqueeze(-1).unsqueeze(-1) * l for w, l in zip(weights.t(), step_logits_list))
+            logits = sum(w.unsqueeze(-1).unsqueeze(-1) * step_logit for w, step_logit in zip(weights.t(), step_logits_list, strict=True))
             out = {
                 "logits": logits,
                 "halting_probs": torch.stack(halting_probs_list, dim=1),

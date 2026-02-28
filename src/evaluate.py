@@ -1,5 +1,6 @@
 """Evaluation and ACT step distribution analysis."""
 
+import warnings
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,16 +22,17 @@ def evaluate_constrained_gnn(model, loader, config: Config, max_samples: int | N
     correct = 0
     total = 0
     with torch.no_grad():
-        for i, batch in enumerate(loader):
-            if max_samples is not None and i >= max_samples:
-                break
+        for batch in loader:
             q = batch["question"].to(device, non_blocking=NON_BLOCKING)
             a = batch["answer"].to(device, non_blocking=NON_BLOCKING)
-            for b in range(q.shape[0]):
+            remaining = (max_samples - total) if max_samples is not None else q.shape[0]
+            for b in range(min(q.shape[0], remaining)):
                 pred = constrained_decode(model, q[b], device, max_steps=config.gnn_decode_max_steps)
                 match = (pred == a[b]).all().item()
                 correct += match
                 total += 1
+            if max_samples is not None and total >= max_samples:
+                break
     return correct / total if total > 0 else 0.0
 
 
@@ -100,6 +102,8 @@ def load_model(config: Config, model_type: str, use_act: bool = False, device: s
             )
     if ckpt.exists():
         model.load_state_dict(torch.load(ckpt, map_location="cpu", weights_only=True))
+    else:
+        warnings.warn(f"Checkpoint not found: {ckpt}. Using random weights.")
     model = model.to(device or config.device)
     model.eval()
     return model
@@ -166,7 +170,11 @@ def analyze_act_steps(config: Config, model_type: str = "attention", n_samples: 
             if i >= n_samples:
                 break
             q = batch["question"].to(config.device, non_blocking=NON_BLOCKING)
-            r = batch["rating"].item()
+            rating_raw = batch.get("rating", None)
+            if rating_raw is not None and isinstance(rating_raw, torch.Tensor):
+                r = rating_raw.item()
+            else:
+                r = -1
             out = model(q)
             if "halting_probs" in out:
                 # Compute actual step count per sample from cumulative halt probability
@@ -187,6 +195,11 @@ def analyze_act_steps(config: Config, model_type: str = "attention", n_samples: 
                 steps_list.append(config.trm_max_steps)
                 ratings_list.append(r)
 
+    out_path = config.output_dir / "act_step_distribution.png"
+    if not steps_list:
+        print("No ACT step data collected; skipping plot.")
+        return
+
     steps_arr = np.array(steps_list)
     ratings_arr = np.array(ratings_list)
 
@@ -201,9 +214,9 @@ def analyze_act_steps(config: Config, model_type: str = "attention", n_samples: 
     axes[1].set_ylabel("Steps used")
     axes[1].set_title("Steps vs Difficulty")
     plt.tight_layout()
-    plt.savefig(config.output_dir / "act_step_distribution.png")
+    plt.savefig(out_path)
     plt.close()
-    print(f"Saved ACT step distribution to {config.output_dir / 'act_step_distribution.png'}")
+    print(f"Saved ACT step distribution to {out_path}")
 
 
 if __name__ == "__main__":

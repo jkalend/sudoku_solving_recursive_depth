@@ -146,6 +146,12 @@ def train_trm(
         config.dataset_name, config.batch_size, config.num_workers
     )
 
+    _valid_model_types = ("mlp", "attention", "attention_xl")
+    if model_type not in _valid_model_types:
+        raise ValueError(
+            f"train_trm: unknown model_type={model_type!r}; expected one of {_valid_model_types}"
+        )
+
     if model_type == "mlp":
         model = TRMMLP(
             vocab_size=config.vocab_size,

@@ -10,6 +10,10 @@ def tokenize_sudoku(puzzle_str: str) -> list[int]:
     """Convert 81-char Sudoku string to integer tokens.
     '.' -> 0 (empty/mask), '1'-'9' -> 1-9.
     """
+    if len(puzzle_str) != 81:
+        raise ValueError(
+            f"tokenize_sudoku expects an 81-character string, got {len(puzzle_str)} characters"
+        )
     tokens = []
     for c in puzzle_str:
         if c == ".":

@@ -18,11 +18,7 @@ def profile_latency(model, device: str, n_warmup: int = 10, n_runs: int = 1000):
     # Warmup
     with torch.no_grad():
         for _ in range(n_warmup):
-            out = model(x)
-            if isinstance(out, dict):
-                logits = out["logits"]
-            else:
-                logits = out
+            model(x)
 
     if device == "cuda":
         torch.cuda.synchronize()

@@ -1,9 +1,7 @@
 """4-layer feed-forward Transformer baseline (~14M params)."""
 
-import math
 import torch
 import torch.nn as nn
-from einops import rearrange
 
 
 class BaselineTransformer(nn.Module):

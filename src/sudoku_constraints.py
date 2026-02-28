@@ -75,6 +75,8 @@ def is_board_valid(board: torch.Tensor) -> bool:
         raise ValueError(
             f"is_board_valid expects a (81,) or (1, 81) tensor, got shape {tuple(board.shape)}"
         )
+    if board.numel() != 81:
+        raise ValueError(f"is_board_valid expects 81 cells, got {board.numel()}")
     board = board.cpu()
     for i in range(9):
         row = board[i * 9 : (i + 1) * 9]
@@ -109,6 +111,8 @@ def is_board_solved(board: torch.Tensor) -> bool:
         raise ValueError(
             f"is_board_solved expects a (81,) or (1, 81) tensor, got shape {tuple(board.shape)}"
         )
+    if board.numel() != 81:
+        raise ValueError(f"is_board_solved expects 81 cells, got {board.numel()}")
     return (board != 0).all().item() and is_board_valid(board)
 
 
@@ -129,6 +133,11 @@ def constrained_decode(
     """
     if puzzle.dim() == 1:
         puzzle = puzzle.unsqueeze(0)
+    elif puzzle.dim() != 2 or puzzle.size(0) != 1:
+        raise ValueError(
+            f"constrained_decode only supports single puzzles: expected shape (81,) or (1, 81), "
+            f"got {tuple(puzzle.shape)}"
+        )
     board = puzzle.clone().to(device)
     model.eval()
 
