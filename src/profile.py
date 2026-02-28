@@ -28,7 +28,7 @@ def profile_latency(model, device: str, n_warmup: int = 10, n_runs: int = 1000):
         for _ in range(n_runs):
             start = time.perf_counter()
             out = model(x)
-            logits = out["logits"] if isinstance(out, dict) else out
+            _ = out["logits"] if isinstance(out, dict) else out
             if device == "cuda":
                 torch.cuda.synchronize()
             times.append((time.perf_counter() - start) * 1000)
@@ -78,7 +78,6 @@ def profile_flops(model, device: str):
 
 def run_profiling(config: Config, force_cpu: bool = False):
     """Profile all models. Set force_cpu=True to avoid CUDA/torchvision version mismatch."""
-    import numpy as np
     device = "cpu" if force_cpu else config.device
     if force_cpu:
         print("(Profiling on CPU)")

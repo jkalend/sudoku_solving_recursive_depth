@@ -4,6 +4,9 @@ import torch
 import torch.nn as nn
 
 
+from .trm_base import init_weights
+
+
 def _build_sudoku_adjacency() -> torch.Tensor:
     """Build normalized adjacency matrix (81, 81) for Sudoku peers.
     A[i, j] = 1/|peers(i)| if j is peer of i (same row, col, or box), else 0.
@@ -76,13 +79,7 @@ class SudokuGNN(nn.Module):
         self._init_weights()
 
     def _init_weights(self):
-        for m in self.modules():
-            if isinstance(m, nn.Linear):
-                nn.init.xavier_uniform_(m.weight)
-                if m.bias is not None:
-                    nn.init.zeros_(m.bias)
-            elif isinstance(m, nn.Embedding):
-                nn.init.normal_(m.weight, std=0.02)
+        self.apply(init_weights)
 
     def forward(self, x: torch.Tensor, _mask: torch.Tensor | None = None) -> dict:
         """

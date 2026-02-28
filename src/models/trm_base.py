@@ -5,6 +5,16 @@ import torch.nn as nn
 from einops import rearrange
 
 
+def init_weights(module: nn.Module):
+    """Shared weight initialization for all models."""
+    if isinstance(module, nn.Linear):
+        nn.init.xavier_uniform_(module.weight)
+        if module.bias is not None:
+            nn.init.zeros_(module.bias)
+    elif isinstance(module, nn.Embedding):
+        nn.init.normal_(module.weight, std=0.02)
+
+
 class ThinkReviseBlockAttention(nn.Module):
     """Attention-based: z attends to context, y attends to context."""
 

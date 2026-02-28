@@ -61,7 +61,7 @@ def load_model(config: Config, model_type: str, use_act: bool = False, device: s
             act_max_steps=config.gnn_act_max_steps,
         )
         ckpt = config.checkpoint_dir / ("gnn_act.pt" if use_act else "gnn.pt")
-    else:
+    elif model_type in ("mlp", "attention", "attention_xl"):
         name = f"trm_{model_type}_act" if use_act else f"trm_{model_type}"
         ckpt = config.checkpoint_dir / f"{name}.pt"
         if model_type == "mlp":
@@ -88,7 +88,7 @@ def load_model(config: Config, model_type: str, use_act: bool = False, device: s
                 use_act=use_act,
                 act_max_steps=config.trm_xl_act_max_steps,
             )
-        else:
+        elif model_type == "attention":
             model = TRMAttention(
                 vocab_size=config.vocab_size,
                 seq_len=config.seq_len,
@@ -100,10 +100,16 @@ def load_model(config: Config, model_type: str, use_act: bool = False, device: s
                 use_act=use_act,
                 act_max_steps=config.act_max_steps,
             )
-    if ckpt.exists():
-        model.load_state_dict(torch.load(ckpt, map_location="cpu", weights_only=True))
+        else:
+            # This should be unreachable due to the if condition but kept for safety
+            raise ValueError(f"load_model: invalid model_type {model_type!r}")
     else:
-        warnings.warn(f"Checkpoint not found: {ckpt}. Using random weights.")
+        raise ValueError(f"load_model: invalid model_type {model_type!r}")
+
+    if not ckpt.exists():
+        raise FileNotFoundError(f"Checkpoint not found: {ckpt}. Cannot evaluate uninitialized model.")
+
+    model.load_state_dict(torch.load(ckpt, map_location="cpu", weights_only=True))
     model = model.to(device or config.device)
     model.eval()
     return model

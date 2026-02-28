@@ -3,7 +3,6 @@
 import warnings
 import torch
 from torch.utils.data import Dataset
-from pathlib import Path
 
 
 def tokenize_sudoku(puzzle_str: str) -> list[int]:
@@ -62,28 +61,13 @@ def _load_from_hf_csv(dataset_name: str, split: str) -> list[dict]:
     # Handle rating overflow: coerce to int32
     if "rating" in df.columns:
         df["rating"] = pd.to_numeric(df["rating"], errors="coerce").fillna(0).astype("int32")
-    data = []
-    for _, row in df.iterrows():
-        data.append({
-            "question": tokenize_sudoku(str(row["question"]).strip()),
-            "answer": tokenize_sudoku(str(row["answer"]).strip()),
-            "rating": int(row.get("rating", 0)),
-        })
-    return data
+    return df
 
 
-def _load_from_datasets(dataset_name: str, split: str) -> list[dict]:
+def _load_from_datasets(dataset_name: str, split: str):
     """Load via HuggingFace datasets library."""
     from datasets import load_dataset
-    ds = load_dataset(dataset_name, split=split)
-    return [
-        {
-            "question": tokenize_sudoku(row["question"]),
-            "answer": tokenize_sudoku(row["answer"]),
-            "rating": int(row.get("rating", 0)) if row.get("rating") is not None else 0,
-        }
-        for row in ds
-    ]
+    return load_dataset(dataset_name, split=split)
 
 
 class SudokuDataset(Dataset):
@@ -103,11 +87,11 @@ class SudokuDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx: int) -> dict:
-        row = self.data[idx]
+        row = self.data.iloc[idx] if hasattr(self.data, "iloc") else self.data[idx]
         return {
-            "question": torch.tensor(row["question"], dtype=torch.long),
-            "answer": torch.tensor(row["answer"], dtype=torch.long),
-            "rating": row["rating"],
+            "question": torch.tensor(tokenize_sudoku(str(row["question"]).strip()), dtype=torch.long),
+            "answer": torch.tensor(tokenize_sudoku(str(row["answer"]).strip()), dtype=torch.long),
+            "rating": int(row.get("rating", 0)) if row.get("rating") is not None else 0,
         }
 
 

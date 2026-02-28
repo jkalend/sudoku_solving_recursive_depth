@@ -42,17 +42,28 @@ def legal_digit_mask(board: torch.Tensor) -> torch.Tensor:
         mask: (B, 81, 10) or (81, 10) bool, True = legal
     """
     _init_peers()
-    if board.dim() == 1:
+    is_1d = board.dim() == 1
+    if is_1d:
+        if board.size(0) != 81:
+            raise ValueError(f"legal_digit_mask: expected 1D board of length 81, got {board.size(0)}")
         board = board.unsqueeze(0)
+    elif board.dim() == 2:
+        if board.size(1) != 81:
+            raise ValueError(f"legal_digit_mask: expected 2D board with width 81, got {board.size(1)}")
+    else:
+        raise ValueError(f"legal_digit_mask: expected 1D or 2D board, got {board.dim()}D")
+
     B, _ = board.shape
     device = board.device
     mask = torch.ones(B, 81, 10, dtype=torch.bool, device=device)
 
     for b in range(B):
         for i in range(81):
-            if board[b, i].item() != 0:
+            val = board[b, i].item()
+            if val != 0:
                 mask[b, i, :] = False
-                mask[b, i, board[b, i].item()] = True
+                if 0 <= val <= 9:
+                    mask[b, i, val] = True
                 continue
             for d in range(1, 10):
                 for j in _PEERS[i]:
@@ -60,7 +71,7 @@ def legal_digit_mask(board: torch.Tensor) -> torch.Tensor:
                         mask[b, i, d] = False
                         break
 
-    return mask
+    return mask.squeeze(0) if is_1d else mask
 
 
 def is_board_valid(board: torch.Tensor) -> bool:
@@ -132,11 +143,19 @@ def constrained_decode(
         board: (81,) filled board (may be partial if stalled)
     """
     if puzzle.dim() == 1:
+        if puzzle.size(0) != 81:
+            raise ValueError(
+                f"constrained_decode: expected 1D puzzle of length 81, got {tuple(puzzle.shape)}"
+            )
         puzzle = puzzle.unsqueeze(0)
-    elif puzzle.dim() != 2 or puzzle.size(0) != 1:
+    elif puzzle.dim() == 2:
+        if puzzle.size(0) != 1 or puzzle.size(1) != 81:
+            raise ValueError(
+                f"constrained_decode: expected 2D puzzle of shape (1, 81), got {tuple(puzzle.shape)}"
+            )
+    else:
         raise ValueError(
-            f"constrained_decode only supports single puzzles: expected shape (81,) or (1, 81), "
-            f"got {tuple(puzzle.shape)}"
+            f"constrained_decode: expected 1D or 2D puzzle, got {puzzle.dim()}D with shape {tuple(puzzle.shape)}"
         )
     board = puzzle.clone().to(device)
     model.eval()

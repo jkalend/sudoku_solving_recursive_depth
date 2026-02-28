@@ -25,7 +25,7 @@ def sudoku_loss(
     answer_flat = answer.view(-1)
     mask_flat = mask.view(-1)
     if mask_flat.sum() == 0:
-        return torch.tensor(0.0, device=logits.device)
+        return logits.sum() * 0.0
     loss = F.cross_entropy(logits_flat[mask_flat], answer_flat[mask_flat], reduction=reduction)
     return loss
 

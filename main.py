@@ -1,6 +1,7 @@
 """Main entry point: train all models and run evaluation."""
 
 import argparse
+import torch
 from src.config import Config
 from src.train import train_baseline, train_trm, train_gnn, evaluate
 from src.data import get_dataloaders
@@ -19,7 +20,7 @@ def main():
     config = Config()
     if args.full:
         config.dataset_name = "sapientinc/sudoku-extreme"
-    import torch
+
     if config.device == "cuda":
         print(f"Using GPU: {torch.cuda.get_device_name(0)} ({torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB VRAM)")
     else:

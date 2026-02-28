@@ -4,6 +4,9 @@ import torch
 import torch.nn as nn
 
 
+from .trm_base import init_weights
+
+
 class BaselineTransformer(nn.Module):
     """Standard 4-layer Transformer for Sudoku prediction."""
 
@@ -41,13 +44,7 @@ class BaselineTransformer(nn.Module):
         self._init_weights()
 
     def _init_weights(self):
-        for m in self.modules():
-            if isinstance(m, nn.Linear):
-                nn.init.xavier_uniform_(m.weight)
-                if m.bias is not None:
-                    nn.init.zeros_(m.bias)
-            elif isinstance(m, nn.Embedding):
-                nn.init.normal_(m.weight, std=0.02)
+        self.apply(init_weights)
 
     def forward(self, x: torch.Tensor, mask: torch.Tensor | None = None) -> torch.Tensor:
         """

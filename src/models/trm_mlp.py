@@ -3,7 +3,7 @@
 import torch
 import torch.nn as nn
 
-from .trm_base import ThinkReviseBlockMLP
+from .trm_base import ThinkReviseBlockMLP, init_weights
 
 
 class TRMMLP(nn.Module):
@@ -48,13 +48,7 @@ class TRMMLP(nn.Module):
         self._init_weights()
 
     def _init_weights(self):
-        for m in self.modules():
-            if isinstance(m, nn.Linear):
-                nn.init.xavier_uniform_(m.weight)
-                if m.bias is not None:
-                    nn.init.zeros_(m.bias)
-            elif isinstance(m, nn.Embedding):
-                nn.init.normal_(m.weight, std=0.02)
+        self.apply(init_weights)
 
     def _one_step(self, z: torch.Tensor, y: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         z, y = self.block1(z, y)
@@ -84,6 +78,13 @@ class TRMMLP(nn.Module):
         cumulative_halt = torch.zeros(B, device=x.device)
 
         max_steps = self.act_max_steps if self.use_act else self.n_steps
+        if max_steps == 0:
+            logits = self.head(y)
+            out = {"logits": logits}
+            if return_steps:
+                out["step_logits"] = []
+            return out
+
         n_steps_used = 0
 
         for step in range(max_steps):

@@ -1,6 +1,7 @@
 """Run full pipeline: train all models, evaluate, profile, write summary."""
 
 import sys
+import argparse
 from pathlib import Path
 
 from src.config import Config
@@ -11,13 +12,18 @@ from src.profile import run_profiling
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--full", action="store_true", help="Use full sudoku-extreme dataset")
+    parser.add_argument("--quick", action="store_true", help="Quick run: 3 epochs")
+    args = parser.parse_args()
+
     config = Config()
-    if "--full" in sys.argv:
+    if args.full:
         config.dataset_name = "sapientinc/sudoku-extreme"
     results = {}
 
-    # 1. Train all models (quick: 5 epochs for testing)
-    quick = "--quick" in sys.argv
+    # 1. Train all models (quick: 3 epochs for testing)
+    quick = args.quick
     epochs = 3 if quick else 50
 
     print("=" * 60)
