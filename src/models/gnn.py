@@ -84,7 +84,7 @@ class SudokuGNN(nn.Module):
             elif isinstance(m, nn.Embedding):
                 nn.init.normal_(m.weight, std=0.02)
 
-    def forward(self, x: torch.Tensor, mask: torch.Tensor | None = None) -> dict:
+    def forward(self, x: torch.Tensor, _mask: torch.Tensor | None = None) -> dict:
         """
         Args:
             x: (B, 81) integer tokens, 0=empty, 1-9=digit
@@ -119,8 +119,8 @@ class SudokuGNN(nn.Module):
             weights = torch.stack(halting_probs_list, dim=1)
             weights = weights / (weights.sum(dim=1, keepdim=True) + 1e-8)
             logits = sum(
-                w.unsqueeze(-1).unsqueeze(-1) * l
-                for w, l in zip(weights.t(), step_logits_list)
+                w.unsqueeze(-1).unsqueeze(-1) * step_logit
+                for w, step_logit in zip(weights.t(), step_logits_list, strict=True)
             )
             return {
                 "logits": logits,

@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 from src.config import Config
-from src.train import train_baseline, train_trm, evaluate
+from src.train import train_baseline, train_trm, train_gnn, evaluate
 from src.data import get_dataloaders
 from src.evaluate import run_evaluation, analyze_act_steps, load_model
 from src.profile import run_profiling, profile_latency
@@ -47,32 +47,52 @@ def main():
     print("=" * 60)
     train_trm(config, model_type="attention", use_act=True, epochs=epochs)
 
-    # 6. Evaluation
     print("\n" + "=" * 60)
-    print("6. Evaluation")
+    print("6. Training TRM-Attention-XL")
+    print("=" * 60)
+    train_trm(config, model_type="attention_xl", use_act=False, epochs=epochs)
+
+    print("\n" + "=" * 60)
+    print("7. Training TRM-Attention-XL with ACT")
+    print("=" * 60)
+    train_trm(config, model_type="attention_xl", use_act=True, epochs=epochs)
+
+    print("\n" + "=" * 60)
+    print("8. Training GNN")
+    print("=" * 60)
+    train_gnn(config, use_act=False, epochs=epochs)
+
+    print("\n" + "=" * 60)
+    print("9. Training GNN with ACT")
+    print("=" * 60)
+    train_gnn(config, use_act=True, epochs=epochs)
+
+    # 10. Evaluation
+    print("\n" + "=" * 60)
+    print("10. Evaluation")
     print("=" * 60)
     results["accuracy"] = run_evaluation(config)
 
-    # 7. ACT step analysis
+    # 11. ACT step analysis
     print("\n" + "=" * 60)
-    print("7. ACT Step Distribution")
+    print("11. ACT Step Distribution")
     print("=" * 60)
     try:
         analyze_act_steps(config, model_type="attention", n_samples=500)
-    except Exception as e:
+    except (FileNotFoundError, RuntimeError, ValueError) as e:
         print(f"ACT analysis failed: {e}")
 
-    # 8. Profiling
+    # 12. Profiling
     print("\n" + "=" * 60)
-    print("8. Profiling")
+    print("12. Profiling")
     print("=" * 60)
     try:
         results["profiling"] = run_profiling(config)
-    except Exception as e:
+    except (FileNotFoundError, RuntimeError, ValueError) as e:
         print(f"Profiling failed: {e}")
         results["profiling"] = []
 
-    # 9. Write summary
+    # 13. Write summary
     write_summary(config, results)
 
 
@@ -83,13 +103,13 @@ def write_summary(config: Config, results: dict):
         "# TRM Sudoku Evaluation - Project Summary",
         "",
         "## Overview",
-        "This project evaluates **Architectural Scaling vs. Recursive Depth** in Tiny Recursive Models (TRMs) on the Sudoku-Extreme-1k dataset.",
+        f"This project evaluates **Architectural Scaling vs. Recursive Depth** in Tiny Recursive Models (TRMs) on the {config.dataset_name} dataset.",
         "",
         "## Implementation Steps",
         "",
         "### 1. Environment & Data Setup",
         "- **venv**: Python virtual environment with PyTorch, HuggingFace datasets, einops, ptflops",
-        "- **Dataset**: sapientinc/sudoku-extreme-1k (1k train, 20k test_hard)",
+        f"- **Dataset**: {config.dataset_name}",
         "- **Tokenization**: 81-char strings → 81 int tokens (0=empty, 1-9=digits)",
         "- **Fallback**: CSV loaded via huggingface_hub when datasets library has overflow issues",
         "",
@@ -128,10 +148,11 @@ def write_summary(config: Config, results: dict):
         for name, acc in results["accuracy"].items():
             lines.append(f"- **{name}**: {acc:.4f}" if acc is not None else f"- **{name}**: N/A")
         lines.append("")
-    if results.get("profiling"):
+    if results.get("profiling") and hasattr(results["profiling"], "__iter__"):
         lines.append("### Profiling")
         for r in results["profiling"]:
-            lines.append(f"- **{r['name']}**: latency={r.get('latency_ms')}ms, params={r.get('params')}")
+            name = r.get("name", "<unknown>")
+            lines.append(f"- **{name}**: latency={r.get('latency_ms')}ms, params={r.get('params')}")
         lines.append("")
     lines.extend([
         "## Architectural Choices",

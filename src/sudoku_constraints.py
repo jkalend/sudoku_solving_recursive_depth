@@ -65,8 +65,16 @@ def legal_digit_mask(board: torch.Tensor) -> torch.Tensor:
 
 def is_board_valid(board: torch.Tensor) -> bool:
     """Check no row/col/box has duplicate digits. 0 is ignored."""
-    if board.dim() > 1:
+    if board.dim() == 2:
+        if board.shape[0] != 1:
+            raise ValueError(
+                f"is_board_valid expects a (81,) or (1, 81) tensor, got shape {tuple(board.shape)}"
+            )
         board = board.squeeze(0)
+    elif board.dim() != 1:
+        raise ValueError(
+            f"is_board_valid expects a (81,) or (1, 81) tensor, got shape {tuple(board.shape)}"
+        )
     board = board.cpu()
     for i in range(9):
         row = board[i * 9 : (i + 1) * 9]
@@ -91,8 +99,16 @@ def is_board_valid(board: torch.Tensor) -> bool:
 
 def is_board_solved(board: torch.Tensor) -> bool:
     """Check board has no zeros and is valid."""
-    if board.dim() > 1:
+    if board.dim() == 2:
+        if board.shape[0] != 1:
+            raise ValueError(
+                f"is_board_solved expects a (81,) or (1, 81) tensor, got shape {tuple(board.shape)}"
+            )
         board = board.squeeze(0)
+    elif board.dim() != 1:
+        raise ValueError(
+            f"is_board_solved expects a (81,) or (1, 81) tensor, got shape {tuple(board.shape)}"
+        )
     return (board != 0).all().item() and is_board_valid(board)
 
 

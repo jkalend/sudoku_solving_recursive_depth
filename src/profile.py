@@ -18,15 +18,11 @@ def profile_latency(model, device: str, n_warmup: int = 10, n_runs: int = 1000):
     # Warmup
     with torch.no_grad():
         for _ in range(n_warmup):
-            if hasattr(model, "forward") and "logits" in str(type(model).__name__):
-                out = model(x) if "baseline" in str(type(model).__name__).lower() else model(x)
-                if isinstance(out, dict):
-                    _ = out["logits"]
-                else:
-                    _ = out
+            out = model(x)
+            if isinstance(out, dict):
+                logits = out["logits"]
             else:
-                out = model(x)
-                _ = out["logits"] if isinstance(out, dict) else out
+                logits = out
 
     if device == "cuda":
         torch.cuda.synchronize()

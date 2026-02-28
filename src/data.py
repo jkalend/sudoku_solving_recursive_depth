@@ -1,5 +1,6 @@
 """Data loading and tokenization for Sudoku-Extreme dataset."""
 
+import warnings
 import torch
 from torch.utils.data import Dataset
 from pathlib import Path
@@ -41,14 +42,18 @@ def _load_from_hf_csv(dataset_name: str, split: str) -> list[dict]:
         # Full dataset has test.csv; 1k has test_hard.csv. Try both.
         fnames = ["test_hard.csv", "test.csv"]
     path = None
+    last_exc = None
     for fname in fnames:
         try:
             path = hf_hub_download(repo_id=dataset_name, filename=fname, repo_type="dataset")
             break
-        except Exception:
+        except Exception as e:
+            last_exc = e
             continue
     if path is None:
-        raise FileNotFoundError(f"Could not find train/test CSV in {dataset_name}")
+        raise FileNotFoundError(
+            f"Could not find train/test CSV in {dataset_name}: {last_exc}"
+        )
     df = pd.read_csv(path)
     # Handle rating overflow: coerce to int32
     if "rating" in df.columns:
@@ -129,6 +134,12 @@ def get_dataloaders(
         try:
             test_ds = SudokuDataset(split="test", dataset_name=dataset_name)
         except Exception:
+            warnings.warn(
+                f"Test splits 'test_hard' and 'test' were unavailable for dataset "
+                f"'{dataset_name}'; falling back to 'train' split for testing. "
+                "Evaluation results will not reflect held-out performance.",
+                stacklevel=2,
+            )
             test_ds = SudokuDataset(split="train", dataset_name=dataset_name)
 
     train_loader = torch.utils.data.DataLoader(

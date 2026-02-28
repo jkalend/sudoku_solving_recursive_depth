@@ -99,7 +99,7 @@ def load_model(config: Config, model_type: str, use_act: bool = False, device: s
                 act_max_steps=config.act_max_steps,
             )
     if ckpt.exists():
-        model.load_state_dict(torch.load(ckpt, map_location="cpu"))
+        model.load_state_dict(torch.load(ckpt, map_location="cpu", weights_only=True))
     model = model.to(device or config.device)
     model.eval()
     return model
@@ -145,7 +145,7 @@ def run_evaluation(config: Config):
             if model_type != "gnn":
                 results[name] = acc
                 print(f"{name}: {acc:.4f}")
-        except Exception as e:
+        except (FileNotFoundError, RuntimeError, OSError, ValueError) as e:
             print(f"{name}: failed - {e}")
             results[name] = None
 
@@ -190,7 +190,7 @@ def analyze_act_steps(config: Config, model_type: str = "attention", n_samples: 
     steps_arr = np.array(steps_list)
     ratings_arr = np.array(ratings_list)
 
-    fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+    _fig, axes = plt.subplots(1, 2, figsize=(10, 4))
     axes[0].hist(steps_arr, bins=range(1, int(steps_arr.max()) + 2), edgecolor="black")
     axes[0].set_xlabel("Recursive steps")
     axes[0].set_ylabel("Count")

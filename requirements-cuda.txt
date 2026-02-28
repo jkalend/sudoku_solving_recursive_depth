@@ -1,7 +1,7 @@
 # PyTorch with CUDA 13.0 for RTX 4090 - install first:
 --extra-index-url https://download.pytorch.org/whl/cu130
-torch>=2.1.0
-torchvision>=0.16.0
+torch==2.1.0
+torchvision==0.16.0
 
 # Rest of dependencies
 datasets>=2.14.0

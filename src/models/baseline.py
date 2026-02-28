@@ -59,14 +59,16 @@ class BaselineTransformer(nn.Module):
         Returns:
             logits: (B, 81, 10) for digits 0-9 (0 = empty, 1-9 = filled)
         """
-        B = x.shape[0]
         h = self.embed(x) + self.pos_embed
         h = self.dropout(h)
 
-        # Transformer expects (B, S, E), src_key_padding_mask True = ignore
+        # Transformer src_key_padding_mask=True means ignore that KEY position.
+        # mask=True marks empty cells (to predict); given/clue cells (mask=False)
+        # should remain visible as context, so we pass mask directly so only
+        # empty-cell positions are suppressed as keys.
         src_key_padding_mask = None
         if mask is not None:
-            src_key_padding_mask = ~mask  # True = padding (given cells we don't predict)
+            src_key_padding_mask = mask.bool()
 
         h = self.encoder(h, src_key_padding_mask=src_key_padding_mask)
         logits = self.head(h)

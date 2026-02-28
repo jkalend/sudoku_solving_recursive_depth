@@ -31,6 +31,11 @@ class ThinkReviseBlockAttention(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, z: torch.Tensor, y: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        if z.dim() != y.dim() or z.shape[:-1] != y.shape[:-1]:
+            raise ValueError(
+                f"z and y must have matching batch/sequence dimensions, "
+                f"got z={tuple(z.shape)}, y={tuple(y.shape)}"
+            )
         # Think: z attends to projected concat(z, y)
         ctx = self.think_proj(torch.cat([z, y], dim=-1))
         z_new, _ = self.think_attn(z, ctx, ctx)
@@ -70,6 +75,15 @@ class ThinkReviseBlockMLP(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, z: torch.Tensor, y: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        if z.dim() != y.dim() or z.shape[:-1] != y.shape[:-1]:
+            raise ValueError(
+                f"z and y must have matching batch/sequence dimensions, "
+                f"got z={tuple(z.shape)}, y={tuple(y.shape)}"
+            )
+        if z.shape[1] != self.seq_len:
+            raise ValueError(
+                f"Expected sequence length {self.seq_len}, got z.shape[1]={z.shape[1]}"
+            )
         # Think: z = z + channel_mix(concat(z,y)) + token_mix(z)
         zy = torch.cat([z, y], dim=-1)
         z = self.norm_z(z + self.dropout(self.think_channel(zy)))

@@ -108,7 +108,7 @@ def train_gnn(
             out = model(q)
 
             if deep_supervision and "step_logits" in out:
-                loss = 0.0
+                loss = torch.zeros(1, device=q.device, dtype=out["step_logits"][0].dtype).squeeze()
                 for step_logits in out["step_logits"]:
                     loss = loss + sudoku_loss(step_logits, a, mask)
                 loss = loss / len(out["step_logits"])
@@ -195,10 +195,10 @@ def train_trm(
             a = batch["answer"].to(config.device, non_blocking=NON_BLOCKING)
             mask = q == 0
             opt.zero_grad()
-            out = model(q)
+            out = model(q, return_steps=True)
 
             if deep_supervision and "step_logits" in out:
-                loss = 0.0
+                loss = torch.zeros(1, device=q.device, dtype=out["step_logits"][0].dtype).squeeze()
                 for step_logits in out["step_logits"]:
                     loss = loss + sudoku_loss(step_logits, a, mask)
                 loss = loss / len(out["step_logits"])

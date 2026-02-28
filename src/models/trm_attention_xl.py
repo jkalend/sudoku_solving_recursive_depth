@@ -112,11 +112,14 @@ class TRMAttentionXL(nn.Module):
             logits = sum(w.unsqueeze(-1).unsqueeze(-1) * l for w, l in zip(weights.t(), step_logits_list))
             out = {
                 "logits": logits,
-                "step_logits": step_logits_list,
                 "halting_probs": torch.stack(halting_probs_list, dim=1),
                 "n_steps": n_steps_used,
             }
+            if return_steps:
+                out["step_logits"] = step_logits_list
         else:
-            out = {"logits": step_logits_list[-1], "step_logits": step_logits_list}
+            out = {"logits": step_logits_list[-1]}
+            if return_steps:
+                out["step_logits"] = step_logits_list
 
         return out

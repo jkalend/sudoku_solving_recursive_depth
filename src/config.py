@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 import torch
 
@@ -64,13 +65,14 @@ class Config:
     # Training
     lr: float = 1e-4
     epochs: int = 50
-    device: str = "cpu"  # Overridden to cuda in __post_init__ when available
+    device: Optional[str] = None  # Set to cuda/cpu in __post_init__ when not explicitly provided
 
     # Paths
     checkpoint_dir: Path = Path("checkpoints")
     output_dir: Path = Path("outputs")
 
     def __post_init__(self):
-        self.device = _get_device()
+        if self.device is None:
+            self.device = _get_device()
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
         self.output_dir.mkdir(parents=True, exist_ok=True)
