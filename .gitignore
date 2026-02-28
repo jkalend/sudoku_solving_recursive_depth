@@ -1,0 +1,12 @@
+.venv
+checkpoints
+.cursor
+_pycache_
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
+*.pywz
+*.pyzw
